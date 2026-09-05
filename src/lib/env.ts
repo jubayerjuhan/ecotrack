@@ -8,4 +8,17 @@ const envSchema = z.object({
   JWT_REFRESH_EXPIRES_IN: z.string().default("30d"),
 });
 
-export const env = envSchema.parse(process.env);
+type Env = z.infer<typeof envSchema>;
+
+let cached: Env | undefined;
+
+// Validated lazily, on first access of a property, rather than at module
+// import time — Next.js imports route modules during the build itself
+// (to determine static/dynamic rendering), so an eager parse() here would
+// fail the build in any environment where these vars aren't set yet.
+export const env: Env = new Proxy({} as Env, {
+  get(_target, prop: keyof Env) {
+    cached ??= envSchema.parse(process.env);
+    return cached[prop];
+  },
+});
