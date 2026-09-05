@@ -6,6 +6,6 @@ export function serializeUser(user: User) {
     email: user.email,
     name: user.name,
     countryCode: user.countryCode,
-    createdAt: user.createdAt,
+    createdAt: user.createdAt.toISOString(),
   };
 }
