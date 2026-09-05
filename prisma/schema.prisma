@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EmissionCategory {
+  TRANSPORT
+  DIET
+  ELECTRICITY
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  countryCode  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  activityLogs  ActivityLog[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+// Reference/lookup table, seeded — not user-editable via UI initially.
+model EmissionFactor {
+  id          String           @id @default(cuid())
+  category    EmissionCategory
+  subtype     String
+  // Nullable: a null countryCode is the GLOBAL fallback used when no
+  // country-specific factor exists for a user's country.
+  countryCode String?
+  factorValue Float
+  unit        String
+  source      String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // One factor per category+subtype+country (country null = GLOBAL row).
+  @@unique([category, subtype, countryCode])
+  @@index([category, subtype])
+  @@map("emission_factors")
+}
+
+model ActivityLog {
+  id           String           @id @default(cuid())
+  userId       String
+  category     EmissionCategory
+  subtype      String
+  quantity     Float
+  unit         String
+  // Computed at write time from calculateEmissions() and stored, so
+  // historical reports don't shift if emission factors are later updated.
+  emissionsKg  Float
+  logDate      DateTime         @default(now())
+  createdAt    DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, logDate])
+  @@index([userId, category])
+  @@map("activity_logs")
+}
+
+// Stores hashed refresh tokens so they can be rotated/revoked server-side.
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
