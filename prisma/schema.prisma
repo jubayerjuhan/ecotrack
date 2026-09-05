@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -14,7 +14,7 @@ enum EmissionCategory {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
   email        String   @unique
   passwordHash String
   name         String
@@ -30,7 +30,7 @@ model User {
 
 // Reference/lookup table, seeded — not user-editable via UI initially.
 model EmissionFactor {
-  id          String           @id @default(cuid())
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
   category    EmissionCategory
   subtype     String
   // Nullable: a null countryCode is the GLOBAL fallback used when no
@@ -49,17 +49,17 @@ model EmissionFactor {
 }
 
 model ActivityLog {
-  id           String           @id @default(cuid())
-  userId       String
-  category     EmissionCategory
-  subtype      String
-  quantity     Float
-  unit         String
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String           @db.ObjectId
+  category    EmissionCategory
+  subtype     String
+  quantity    Float
+  unit        String
   // Computed at write time from calculateEmissions() and stored, so
   // historical reports don't shift if emission factors are later updated.
-  emissionsKg  Float
-  logDate      DateTime         @default(now())
-  createdAt    DateTime         @default(now())
+  emissionsKg Float
+  logDate     DateTime         @default(now())
+  createdAt   DateTime         @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -70,12 +70,12 @@ model ActivityLog {
 
 // Stores hashed refresh tokens so they can be rotated/revoked server-side.
 model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String
-  tokenHash String   @unique
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @db.ObjectId
+  tokenHash String    @unique
   expiresAt DateTime
   revokedAt DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
