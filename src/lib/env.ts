@@ -6,6 +6,8 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(1),
   JWT_ACCESS_EXPIRES_IN: z.string().default("15m"),
   JWT_REFRESH_EXPIRES_IN: z.string().default("30d"),
+  GROQ_API_KEY: z.string().min(1),
+  GROQ_MODEL: z.string().default("openai/gpt-oss-120b"),
 });
 
 type Env = z.infer<typeof envSchema>;

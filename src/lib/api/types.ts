@@ -52,3 +52,19 @@ export type ReportSummary = {
   byCategory: { category: EmissionCategory; emissionsKg: number }[];
   activities: Activity[];
 };
+
+export type ParsedActivity = {
+  category: EmissionCategory;
+  subtype: string;
+  quantity: number;
+};
+
+export type DashboardInsight = {
+  insight: string | null;
+};
+
+export type ChatRole = "user" | "assistant";
+
+export type ChatReply = {
+  reply: string;
+};

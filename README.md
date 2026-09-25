@@ -19,6 +19,8 @@ factors and shows trends and category breakdowns over time.
 - **Validation:** Zod schemas shared between client and server (`src/lib/validation`)
 - **Icons:** lucide-react
 - **Motion:** Framer Motion for micro-interactions
+- **AI:** Groq (`openai/gpt-oss-120b` by default) for natural-language activity
+  logging, a dashboard insight, and a data-grounded chat — see [AI features](#ai-features)
 
 ## Getting started
 
@@ -42,8 +44,10 @@ docker exec ecotrack-mongo mongosh --eval "rs.initiate()"
 ```bash
 npm install
 cp .env.example .env
-# edit .env: set DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET
+# edit .env: set DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, GROQ_API_KEY
 ```
+
+`GROQ_API_KEY` is free at [console.groq.com](https://console.groq.com) → API Keys.
 
 ### 3. Push the schema and seed emission factors
 
@@ -95,8 +99,34 @@ RESTful, versioned under `/api/v1` (implemented as Next.js Route Handlers):
 - `GET /activities?from=&to=&category=&page=&pageSize=`, `POST /activities`
 - `PATCH /activities/:id`, `DELETE /activities/:id`
 - `GET /dashboard/summary?period=week|month`
+- `GET /dashboard/insights?period=week|month` — AI insight (see below)
 - `GET /reports?period=week|month&format=json|csv`
 - `GET /emission-factors`
+- `POST /activities/parse` — AI natural-language activity extraction (see below)
+- `POST /chat` — AI data-grounded chat (see below)
+
+## AI features
+
+All three use Groq (`src/lib/groq.ts`, model set via `GROQ_MODEL`, default
+`openai/gpt-oss-120b`) with structured JSON-schema outputs rather than
+free-form text, so responses are always parseable.
+
+- **Natural-language logging** (`POST /activities/parse`, the "Quick (AI)" tab
+  on `/log`) — extracts `{category, subtype, quantity}` from a free-text
+  message. The `subtype` enum in the JSON schema is built from the real
+  seeded `EmissionFactor` rows, so the model can't return an invalid one; the
+  `(category, subtype)` pairing is re-validated in code as defense in depth.
+  This only extracts intent — every confirmed item still goes through the
+  existing `POST /activities` endpoint, so `calculateEmissions()` stays the
+  one place emissions get computed.
+- **Dashboard insight** (`GET /dashboard/insights`) — a short, specific
+  coaching insight generated from the user's real aggregated numbers (same
+  data the charts use). Skipped entirely (no API call) when there's no data.
+- **Ask AI chat** (`POST /chat`, the `/ask` page) — answers questions grounded
+  in the user's actual last-90-days `ActivityLog` rows plus the same
+  aggregates the dashboard uses (capped at the 60 most recent rows to bound
+  token size). No persisted chat history — the client resends the last 12
+  turns per request.
 
 ## Future (not built in v1)
 
