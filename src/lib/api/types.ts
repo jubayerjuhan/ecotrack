@@ -60,7 +60,7 @@ export type ParsedActivity = {
 };
 
 export type DashboardInsight = {
-  insight: string;
+  insight: string | null;
 };
 
 export type ChatRole = "user" | "assistant";

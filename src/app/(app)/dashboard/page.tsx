@@ -4,6 +4,7 @@ import { Cloud, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { CategoryBreakdownChart } from "@/components/dashboard/category-breakdown-chart";
+import { InsightCard } from "@/components/dashboard/insight-card";
 import { TrendChart } from "@/components/dashboard/trend-chart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { PeriodToggle } from "@/components/ui/period-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatTile } from "@/components/ui/stat-tile";
+import { useDashboardInsight } from "@/hooks/use-dashboard-insight";
 import { useDashboardSummary } from "@/hooks/use-dashboard-summary";
 import type { Period } from "@/lib/date-range";
 
@@ -19,6 +21,7 @@ export default function DashboardPage() {
   const { summary, isLoading, error } = useDashboardSummary(period);
 
   const hasActivity = (summary?.totalEmissionsKg ?? 0) > 0;
+  const insight = useDashboardInsight(period, hasActivity);
 
   return (
     <div>
@@ -61,6 +64,8 @@ export default function DashboardPage() {
               value={summary!.totalEmissionsKg.toFixed(1)}
               suffix="kg CO2e"
             />
+
+            <InsightCard insight={insight.insight} isLoading={insight.isLoading} error={insight.error} />
 
             <Card>
               <p className="mb-4 text-sm font-medium text-brand-800">Trend</p>
